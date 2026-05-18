@@ -1,0 +1,45 @@
+# Single source of truth for all hyperparameters.
+
+model_name: google/flan-t5-base
+seed: 42
+
+# Training
+learning_rate: 5.0e-5
+batch_size: 4
+gradient_accumulation_steps: 8     # effective batch 32
+num_epochs: 8
+warmup_ratio: 0.10
+weight_decay: 0.05
+fp16: true                          # auto-disabled on CPU
+val_split: 0.1                      # deterministic 10% validation split
+early_stopping_patience: 2
+
+# Tokenisation
+max_input_length: 512
+max_target_length: 512
+
+# Inference (beam decoding with repetition controls)
+inference_max_new_tokens: 512
+inference_batch_size: 8
+inference_num_beams: 4
+inference_no_repeat_ngram_size: 4
+inference_repetition_penalty: 1.15
+inference_length_penalty: 1.0
+
+# ReCEval (Stage 5b)
+nli_model: cross-encoder/nli-deberta-v3-small
+nli_batch_size: 16
+info_lm: distilgpt2                 # frozen causal LM for log-likelihood informativeness
+
+paths:
+  set_a: data/processed/set_a_nofilter.jsonl
+  set_b: data/processed/set_b_magister.jsonl
+  set_c: data/processed/set_c_calculator.jsonl
+  direct_ft: data/processed/direct_ft.jsonl
+  gsm8k_test: data/raw/gsm8k/test.jsonl
+  ckpt_root: outputs/checkpoints
+  generations_dir: outputs/generations
+  eval_dir: outputs/eval_results
+  audit_dir: outputs/audit
+  runs_dir: outputs/runs
+  plots_dir: outputs/plots
