@@ -158,12 +158,25 @@ def main():
     p.add_argument("--epochs", type=int, default=None, help="Override num_epochs")
     p.add_argument("--resume", action="store_true", help="Resume from latest checkpoint")
     p.add_argument("--model", default=None,
-                   help="Override config.model_name (e.g. google/flan-t5-small)")
+                   help="Override config.model_name (e.g. google/flan-t5-large)")
+    p.add_argument("--batch-size", type=int, default=None,
+                   help="Override config.batch_size (lower for bigger models)")
+    p.add_argument("--grad-accum", type=int, default=None,
+                   help="Override config.gradient_accumulation_steps (raise to "
+                        "keep effective batch when batch_size drops)")
+    p.add_argument("--lr", type=float, default=None,
+                   help="Override config.learning_rate")
     args = p.parse_args()
 
     cfg = load_config(REPO_ROOT / args.config)
     set_seed(cfg["seed"])
     cfg["active_model_name"] = args.model or cfg["model_name"]
+    if args.batch_size is not None:
+        cfg["batch_size"] = args.batch_size
+    if args.grad_accum is not None:
+        cfg["gradient_accumulation_steps"] = args.grad_accum
+    if args.lr is not None:
+        cfg["learning_rate"] = args.lr
 
     run_dir = REPO_ROOT / cfg["paths"]["ckpt_root"] / args.run_name
     run_dir.mkdir(parents=True, exist_ok=True)

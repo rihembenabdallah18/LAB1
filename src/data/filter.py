@@ -5,8 +5,8 @@ Outputs (one JSONL each, under data/processed/):
 
   set_a_nofilter.jsonl      all teacher CoTs (no filter)
   set_b_magister.jsonl      teacher CoTs whose final answer == gold
-  set_c_calculator.jsonl    teacher CoTs whose final answer == gold AFTER
-                            running each `A op B = C` through a calculator
+  set_c_calculator.jsonl    same membership as Set B, with each `A op B = C`
+                            expression rewritten by a calculator
   direct_ft.jsonl           one record per train example, with cot=""
                             (target collapses to ` #### {gold}`) — reproduces
                             Ho et al.'s "fine-tuning" reference (4.93%)
@@ -55,7 +55,7 @@ def build():
     config_snapshot = {
         "ans_tol": ANS_TOL,
         "calculator": "src.data.calculator.correct_equations",
-        "tolerance_for_calculator_rewrite": "max(1e-6, 0.01 * max(|actual|, 1.0))",
+        "set_c_membership": "same as Set B (Magister filter)",
     }
     card = start("02", "filter", config_snapshot)
 
@@ -142,19 +142,19 @@ def build():
             elif teacher_pred is None:
                 n_skipped_unparseable_teacher += 1
 
-            # Set C — calculator-corrected filter. We rewrite the CoT, re-parse
-            # the final answer, and accept iff it matches gold.
+            # Set C — same membership as Set B, but with calculator-corrected
+            # intermediate arithmetic. We always apply the rewrite; membership
+            # is inherited from Set B so the two sets are directly comparable.
             corrected_cot, edits = correct_equations(cot)
             n_calc_edits = len(edits)
             if n_calc_edits > 0:
                 n_calc_edited += 1
-            corrected_pred = parse_answer(corrected_cot)
-            in_c = corrected_pred is not None and _eq(corrected_pred, gold)
+            in_c = in_b
             if in_c:
                 rec_c = {
                     **base_record,
                     "cot": corrected_cot,             # train students on the corrected version
-                    "calculator_corrected_cot": True,
+                    "calculator_corrected_cot": n_calc_edits > 0,
                     "n_calc_edits": n_calc_edits,
                 }
                 fc.write(json.dumps(rec_c) + "\n")
