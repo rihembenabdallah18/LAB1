@@ -45,6 +45,10 @@ CONDITIONS = [
     "student_set_a",
     "student_set_b",
     "student_set_c",
+    "student_set_c_mix",
+    "student_direct_ft_large",
+    "student_set_b_large",
+    "student_set_c_large",
 ]
 
 METRICS = ["intra", "inter", "info"]
