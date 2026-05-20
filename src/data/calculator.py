@@ -52,8 +52,14 @@ def _is_close(claimed: float, actual: float) -> bool:
 def correct_equations(text: str) -> tuple[str, list[Edit]]:
     """Rewrite each `A op B = C` in `text` with the correct value.
 
+    If any correction would cascade (the old wrong result appears as an
+    operand in a later equation), the entire chain is returned unchanged.
+    Patching one step while leaving downstream references to the old value
+    produces internally inconsistent reasoning.
+
     Returns ``(rewritten_text, edits)``. ``edits`` is empty when the chain
-    has no arithmetic errors (or no equations at all).
+    has no arithmetic errors, no equations at all, or when corrections would
+    cascade.
     """
     edits: list[Edit] = []
 
@@ -74,4 +80,14 @@ def correct_equations(text: str) -> tuple[str, list[Edit]]:
         return new_full
 
     rewritten = _EQ_RE.sub(repl, text)
+
+    # Cascade check: if the old wrong result of any edit appears as an operand
+    # in a later equation, return the original to avoid inconsistent reasoning.
+    for edit in edits:
+        tail = text[edit.span[1]:]
+        for m in _EQ_RE.finditer(tail):
+            if _is_close(float(m.group(1)), edit.claimed) or \
+               _is_close(float(m.group(3)), edit.claimed):
+                return text, []
+
     return rewritten, edits
