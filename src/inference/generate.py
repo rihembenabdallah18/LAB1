@@ -54,6 +54,19 @@ def _count_lines(path: Path) -> int:
 
 
 def _best_checkpoint(run_dir: Path) -> Path:
+    # Prefer the checkpoint the Trainer recorded as best (lowest eval_loss)
+    state_file = run_dir / "trainer_state.json"
+    if state_file.exists():
+        with state_file.open() as f:
+            state = json.load(f)
+        best = state.get("best_model_checkpoint")
+        if best:
+            p = Path(best)
+            if not p.exists():
+                p = run_dir / p.name  # trainer_state paths can be absolute
+            if p.exists():
+                return p
+    # Fallback: highest-numbered checkpoint
     ckpts = sorted(run_dir.glob("checkpoint-*"),
                    key=lambda p: int(p.name.split("-")[-1]))
     if not ckpts:
@@ -95,8 +108,10 @@ def run_inference(
 
     print(f"[{condition}] loading model from {model_path}")
     tok = AutoTokenizer.from_pretrained(model_path)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    # Load in fp16 on GPU to halve VRAM usage (3 GB vs 6 GB for flan-t5-large)
+    dtype = torch.float16 if device == "cuda" else torch.float32
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_path, torch_dtype=dtype)
     model = model.to(device).eval()
     print(f"[{condition}] device={device}, resuming from record {already_done}")
     print(f"[{condition}] gen_kwargs={gen_kwargs}")
