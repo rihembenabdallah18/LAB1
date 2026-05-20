@@ -130,6 +130,7 @@ def build_trainer(cfg: dict, run_dir: Path, ds_train, ds_val, n_epochs: int,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
         lr_scheduler_type="cosine",
+        gradient_checkpointing=True,
     )
 
     callbacks: list[TrainerCallback] = [EpochLogger(run_name, n_epochs)]
