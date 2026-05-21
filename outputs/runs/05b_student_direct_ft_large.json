@@ -1,0 +1,36 @@
+{
+  "stage": "05b",
+  "run_name": "student_direct_ft_large",
+  "started_at": "2026-05-21T15:10:23Z",
+  "completed_at": "2026-05-21T15:11:34Z",
+  "duration_seconds": 70.04,
+  "status": "completed",
+  "config_hash": "sha256:eabcd2817add84fa",
+  "config_snapshot": {
+    "condition": "student_direct_ft_large",
+    "batch_size": 16,
+    "smoke": 0,
+    "max_examples": 0,
+    "info_scorer": "distilgpt2"
+  },
+  "inputs": [
+    "/kaggle/working/LAB1/outputs/generations/student_direct_ft_large.jsonl"
+  ],
+  "outputs": [
+    "/kaggle/working/LAB1/outputs/eval_results/student_direct_ft_large_receval.jsonl",
+    "/kaggle/working/LAB1/outputs/eval_results/receval_summary.csv",
+    "/kaggle/working/LAB1/outputs/plots/receval_violin.png"
+  ],
+  "metrics": {
+    "intra_mean": 0.9117297119403808,
+    "inter_mean": 0.7164630372089318,
+    "info_mean": 1.5422327198523116,
+    "intra_std": 0.020310898468973475,
+    "inter_std": 0.36484800741815,
+    "info_std": 1.4018178580316185,
+    "n_scored": 1319,
+    "seconds_per_100": 5.220497531182302
+  },
+  "samples": [],
+  "notes": ""
+}

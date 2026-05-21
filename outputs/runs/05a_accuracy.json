@@ -1,11 +1,11 @@
 {
   "stage": "05a",
   "run_name": "accuracy",
-  "started_at": "2026-05-19T19:48:20Z",
-  "completed_at": "2026-05-19T19:48:20Z",
-  "duration_seconds": 0.86,
+  "started_at": "2026-05-21T15:08:52Z",
+  "completed_at": "2026-05-21T15:08:53Z",
+  "duration_seconds": 1.34,
   "status": "completed",
-  "config_hash": "sha256:5751710e81c5c1eb",
+  "config_hash": "sha256:bdffbf43fe62c54d",
   "config_snapshot": {
     "conditions": [
       "baseline",
@@ -13,7 +13,10 @@
       "student_set_a",
       "student_set_b",
       "student_set_c",
-      "student_set_c_mix"
+      "student_set_c_mix",
+      "student_direct_ft_large",
+      "student_set_b_large",
+      "student_set_c_large"
     ],
     "tolerance": 1e-06
   },
@@ -23,7 +26,10 @@
     "/kaggle/working/LAB1/outputs/generations/student_set_a.jsonl",
     "/kaggle/working/LAB1/outputs/generations/student_set_b.jsonl",
     "/kaggle/working/LAB1/outputs/generations/student_set_c.jsonl",
-    "/kaggle/working/LAB1/outputs/generations/student_set_c_mix.jsonl"
+    "/kaggle/working/LAB1/outputs/generations/student_set_c_mix.jsonl",
+    "/kaggle/working/LAB1/outputs/generations/student_direct_ft_large.jsonl",
+    "/kaggle/working/LAB1/outputs/generations/student_set_b_large.jsonl",
+    "/kaggle/working/LAB1/outputs/generations/student_set_c_large.jsonl"
   ],
   "outputs": [
     "/kaggle/working/LAB1/outputs/eval_results/accuracy.csv",
@@ -36,9 +42,12 @@
       "student_set_a": 0.026535253980288095,
       "student_set_b": 0.03335860500379075,
       "student_set_c": 0.030326004548900682,
-      "student_set_c_mix": 0.0310841546626232
+      "student_set_c_mix": 0.0310841546626232,
+      "student_direct_ft_large": 0.06899166034874905,
+      "student_set_b_large": 0.05155420773313116,
+      "student_set_c_large": 0.04700530705079606
     },
-    "n_conditions_scored": 6
+    "n_conditions_scored": 9
   },
   "samples": [],
   "notes": ""

@@ -1,0 +1,49 @@
+{
+  "stage": "04_inference",
+  "run_name": "student_set_c_large",
+  "started_at": "2026-05-21T11:08:25Z",
+  "completed_at": "2026-05-21T11:28:58Z",
+  "duration_seconds": 1232.42,
+  "status": "completed",
+  "config_hash": "sha256:8d0509b9f6fb6059",
+  "config_snapshot": {
+    "model_path": "/kaggle/working/LAB1/outputs/checkpoints/student_set_c_large/checkpoint-188",
+    "num_beams": 4,
+    "max_new_tokens": 512,
+    "repetition_penalty": 1.15,
+    "no_repeat_ngram_size": 4
+  },
+  "inputs": [
+    "data/raw/gsm8k/test.jsonl"
+  ],
+  "outputs": [
+    "outputs/generations/student_set_c_large.jsonl"
+  ],
+  "metrics": {
+    "n_total": 1319,
+    "n_generated": 1319,
+    "already_done": 0,
+    "seconds_per_example": 0.93
+  },
+  "samples": [
+    {
+      "question": "Janet\u2019s ducks lay 16 eggs per day. She eats three for breakfast every morning and bakes muffins for her friends every day with four. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. How much in dollars does she make every day at the farmers' market?",
+      "generated_cot": "Janet's ducks lay 16 eggs per day. She eats 3 for breakfast every morning. That means she eats 6 eggs in a day. She bakes muffins for her friends every day with 4. That means she bakes 12 muffins in a week. She sells the remainder at the farmers' market daily for $2 per fresh duck egg. That means th",
+      "parsed_answer": 8.0,
+      "gold_answer": 18.0
+    },
+    {
+      "question": "A robe takes 2 bolts of blue fiber and half that much white fiber.  How many bolts in total does it take?",
+      "generated_cot": "The robe takes 2 bolts of blue fiber. That means it takes 2 * 2 = 4 bolts of white fiber. So in total, it takes 4 + 2 = 6 bolts of fiber. #### 6",
+      "parsed_answer": 6.0,
+      "gold_answer": 3.0
+    },
+    {
+      "question": "Josh decides to try flipping a house.  He buys a house for $80,000 and then puts in $50,000 in repairs.  This increased the value of the house by 150%.  How much profit did he make?",
+      "generated_cot": "Josh buys a house for $80,000. He then puts in $50,000 in repairs. This increased the value of the house by 150%. This means that if he sells the house, he will make a profit of $80,000 - $50,000 = $55,000. #### 55000",
+      "parsed_answer": 55000.0,
+      "gold_answer": 70000.0
+    }
+  ],
+  "notes": "gen_kwargs={'max_new_tokens': 512, 'do_sample': False, 'num_beams': 4, 'length_penalty': 1.0, 'repetition_penalty': 1.15, 'no_repeat_ngram_size': 4}"
+}
