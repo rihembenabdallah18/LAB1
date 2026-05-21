@@ -108,14 +108,10 @@ def build_trainer(cfg: dict, run_dir: Path, ds_train, ds_val, n_epochs: int,
     use_cuda = torch.cuda.is_available()
     fp16 = bool(cfg.get("fp16", False)) and use_cuda
 
-    # Load model in fp16 upfront when training with fp16 to avoid a temporary
-    # fp32 copy in VRAM (critical for large models like flan-t5-large on T4)
-    if fp16:
-        model = AutoModelForSeq2SeqLM.from_pretrained(
-            model_name, torch_dtype=torch.float16
-        )
-    else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    # Always load in fp32 for training — the Trainer's AMP autocast handles
+    # fp16 casting per forward pass via GradScaler. Loading in fp16 directly
+    # causes NaN loss on the first backward pass.
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
     targs = Seq2SeqTrainingArguments(
         output_dir=str(run_dir),
