@@ -134,6 +134,9 @@ def build_trainer(cfg: dict, run_dir: Path, ds_train, ds_val, n_epochs: int,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
         lr_scheduler_type="cosine",
+        # Adafactor uses O(1) optimizer memory vs AdamW's 2x model size,
+        # required to fit flan-t5-large (770M) on a 16 GB T4
+        optim="adafactor",
     )
 
     callbacks: list[TrainerCallback] = [EpochLogger(run_name, n_epochs)]
