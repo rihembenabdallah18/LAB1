@@ -47,6 +47,7 @@ CONDITIONS = [
     "student_set_c",
     "student_set_c_mix",
     "student_direct_ft_large",
+    "student_set_a_large",
     "student_set_b_large",
     "student_set_c_large",
 ]
