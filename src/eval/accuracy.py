@@ -1,13 +1,18 @@
-"""Stage 5a: accuracy on the GSM8K test set.
+"""Stage 5a: accuracy on the GSM8K or SVAMP test set.
 
 For each condition with a Stage-4 generations JSONL, parse the predicted
 final answer (#### priority, last-number fallback) and compare to gold
 with tolerance ``abs(pred - gold) < 1e-6``.
 
-Outputs:
-  - outputs/eval_results/accuracy.csv (condition, n, correct, accuracy)
+Pass --dataset svamp to score SVAMP generations instead of GSM8K.
+
+Outputs (GSM8K, default):
+  - outputs/eval_results/accuracy.csv
   - outputs/plots/accuracy_bar.png
-  - outputs/runs/05a_accuracy.json
+
+Outputs (SVAMP):
+  - outputs/eval_results/svamp/svamp_accuracy.csv
+  - outputs/plots/svamp_accuracy_bar.png
 """
 from __future__ import annotations
 
@@ -24,7 +29,7 @@ GEN_DIR = REPO_ROOT / "outputs" / "generations"
 EVAL_DIR = REPO_ROOT / "outputs" / "eval_results"
 PLOTS_DIR = REPO_ROOT / "outputs" / "plots"
 
-DEFAULT_CONDITIONS = [
+GSM8K_CONDITIONS = [
     "baseline",
     "student_direct_ft",
     "student_set_a",
@@ -35,6 +40,20 @@ DEFAULT_CONDITIONS = [
     "student_set_b_large",
     "student_set_c_large",
 ]
+
+SVAMP_CONDITIONS = [
+    "baseline",
+    "student_direct_ft",
+    "student_set_a",
+    "student_set_b",
+    "student_set_c",
+    "svamp_student_direct_ft",
+    "svamp_student_set_a",
+    "svamp_student_set_b",
+    "svamp_student_set_c",
+]
+
+DEFAULT_CONDITIONS = GSM8K_CONDITIONS  # backward-compat
 
 TOL = 1e-6
 
@@ -74,7 +93,7 @@ def _write_csv(rows: list[dict], path: Path) -> None:
             w.writerow({k: r[k] for k in fields})
 
 
-def _plot_bar(rows: list[dict], path: Path) -> None:
+def _plot_bar(rows: list[dict], path: Path, title: str = "test accuracy by condition") -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -85,7 +104,7 @@ def _plot_bar(rows: list[dict], path: Path) -> None:
     ax.bar(conds, acc, color="steelblue")
     ax.set_xticklabels(conds, rotation=25, ha="right")
     ax.set_ylabel("accuracy (%)")
-    ax.set_title("GSM8K test accuracy by condition")
+    ax.set_title(title)
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -107,22 +126,50 @@ def _print_table(rows: list[dict]) -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--conditions", nargs="+", default=DEFAULT_CONDITIONS)
-    ap.add_argument("--gen-dir", type=Path, default=GEN_DIR)
-    ap.add_argument("--out-csv", type=Path, default=EVAL_DIR / "accuracy.csv")
-    ap.add_argument("--plot", type=Path, default=PLOTS_DIR / "accuracy_bar.png")
+    ap.add_argument("--dataset", choices=["gsm8k", "svamp"], default="gsm8k",
+                    help="Which dataset's generations to score (default: gsm8k)")
+    ap.add_argument("--conditions", nargs="+", default=None,
+                    help="Override conditions list (defaults to dataset-specific list)")
+    ap.add_argument("--gen-dir", type=Path, default=None,
+                    help="Override generations directory")
+    ap.add_argument("--out-csv", type=Path, default=None,
+                    help="Override output CSV path")
+    ap.add_argument("--plot", type=Path, default=None,
+                    help="Override output plot path")
     args = ap.parse_args()
 
-    card = start("05a", "accuracy", {
-        "conditions": args.conditions,
+    # Resolve dataset-specific defaults
+    if args.dataset == "svamp":
+        default_conditions = SVAMP_CONDITIONS
+        default_gen_dir    = GEN_DIR / "svamp"
+        default_csv        = EVAL_DIR / "svamp" / "svamp_accuracy.csv"
+        default_plot       = PLOTS_DIR / "svamp_accuracy_bar.png"
+        run_name           = "svamp_accuracy"
+        plot_title         = "SVAMP test accuracy by condition"
+    else:
+        default_conditions = GSM8K_CONDITIONS
+        default_gen_dir    = GEN_DIR
+        default_csv        = EVAL_DIR / "accuracy.csv"
+        default_plot       = PLOTS_DIR / "accuracy_bar.png"
+        run_name           = "accuracy"
+        plot_title         = "GSM8K test accuracy by condition"
+
+    conditions = args.conditions or default_conditions
+    gen_dir    = args.gen_dir   or default_gen_dir
+    out_csv    = args.out_csv   or default_csv
+    plot_path  = args.plot      or default_plot
+
+    card = start("05a", run_name, {
+        "dataset": args.dataset,
+        "conditions": conditions,
         "tolerance": TOL,
     })
 
     rows: list[dict] = []
     inputs: list[str] = []
     missing: list[str] = []
-    for cond in args.conditions:
-        path = args.gen_dir / f"{cond}.jsonl"
+    for cond in conditions:
+        path = gen_dir / f"{cond}.jsonl"
         if not path.exists():
             missing.append(cond)
             continue
@@ -131,26 +178,27 @@ def main() -> None:
 
     if not rows:
         finish(card, status="failed",
-               notes=f"no generations found in {args.gen_dir}; missing: {missing}")
-        raise SystemExit(f"No generation files found in {args.gen_dir}. Run Stage 4 first.")
+               notes=f"no generations found in {gen_dir}; missing: {missing}")
+        raise SystemExit(f"No generation files found in {gen_dir}. Run Stage 4 first.")
 
-    _write_csv(rows, args.out_csv)
-    _plot_bar(rows, args.plot)
+    _write_csv(rows, out_csv)
+    _plot_bar(rows, plot_path, title=plot_title)
     _print_table(rows)
 
     finish(
         card,
         metrics={
+            "dataset": args.dataset,
             "acc_per_condition": {r["condition"]: r["accuracy"] for r in rows},
             "n_conditions_scored": len(rows),
         },
         inputs=inputs,
-        outputs=[str(args.out_csv), str(args.plot)],
+        outputs=[str(out_csv), str(plot_path)],
         notes=f"missing: {missing}" if missing else "",
     )
 
     if missing:
-        print(f"\n!! Note: scored {len(rows)} of {len(args.conditions)} conditions; "
+        print(f"\n!! Note: scored {len(rows)} of {len(conditions)} conditions; "
               f"missing generations for: {missing}")
 
 

@@ -1,9 +1,10 @@
-"""Stage 1: download GSM8K and Ho et al. teacher CoTs.
+"""Stage 1: download GSM8K + SVAMP and Ho et al. teacher CoTs.
 
-GSM8K: HuggingFace `gsm8k`/`main` config.
+GSM8K:  HuggingFace `gsm8k`/`main` config.
+SVAMP:  HuggingFace `ChilleD/SVAMP` (700 train / 300 test, 1 000 total).
 Teacher CoTs: itsnamgyu/reasoning-teacher release. The shared Dropbox/Drive folder
 contains `teacher_completion_data.tar.gz`, which holds Zero-shot-CoT outputs from
-text-davinci-002 across many datasets. We extract only the GSM8K file.
+text-davinci-002 across many datasets (including SVAMP). We extract both files.
 
 Resumable: each step skips work if its output exists.
 """
@@ -23,6 +24,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = REPO_ROOT / "data" / "raw"
 GSM8K_DIR = RAW_DIR / "gsm8k"
+SVAMP_DIR = RAW_DIR / "svamp"
 HO_DIR = RAW_DIR / "ho_et_al_cots"
 
 DROPBOX_ZIP_URL = (
@@ -71,10 +73,73 @@ def _curl_download(url: str, dest: Path) -> None:
     subprocess.check_call(cmd)
 
 
+def download_svamp() -> None:
+    train_path = SVAMP_DIR / "train.jsonl"
+    test_path = SVAMP_DIR / "test.jsonl"
+    if train_path.exists() and test_path.exists():
+        print(f"[svamp] already downloaded at {SVAMP_DIR}")
+        return
+    print("[svamp] downloading via datasets.load_dataset('ChilleD/SVAMP')")
+    from datasets import load_dataset
+
+    ds = load_dataset("ChilleD/SVAMP")
+    SVAMP_DIR.mkdir(parents=True, exist_ok=True)
+    # Normalise field names to match GSM8K convention used by filter.py:
+    #   question  -> Body + " " + Question (the full problem text)
+    #   answer    -> Answer (bare number string)
+    #   equation  -> Equation (kept as metadata)
+    #   type      -> Type (kept as metadata)
+    def _normalise(row: dict) -> dict:
+        return {
+            "question": (row.get("Body", "") + " " + row.get("Question", "")).strip(),
+            "answer": str(row["Answer"]),
+            "equation": row.get("Equation", ""),
+            "type": row.get("Type", ""),
+            "id": row.get("ID", ""),
+        }
+
+    train_rows = [_normalise(r) for r in ds["train"]]
+    test_rows  = [_normalise(r) for r in ds["test"]]
+    _save_jsonl(train_rows, train_path)
+    _save_jsonl(test_rows, test_path)
+    print(f"[svamp] saved {len(train_rows)} train, {len(test_rows)} test -> {SVAMP_DIR}")
+
+
+def _extract_from_tarball(tar_path: Path, dataset_key: str, out_json: Path) -> None:
+    """Extract the zs_cot / text-davinci-002 JSON for `dataset_key` from the tarball."""
+    print(f"[ho] opening tarball {tar_path} for dataset '{dataset_key}'")
+    with tarfile.open(tar_path, "r:gz") as tf:
+        members = tf.getnames()
+        member = next(
+            (m for m in members
+             if f"D_{dataset_key}.json" in m and "zs_cot" in m and "text-davinci-002" in m),
+            None,
+        )
+        if member is None:
+            # Fallback: accept any member whose basename matches D_<key>.json
+            member = next(
+                (m for m in members if m.endswith(f"D_{dataset_key}.json")),
+                None,
+            )
+        if member is None:
+            available = [m for m in members if m.endswith(".json")]
+            raise RuntimeError(
+                f"No file matching D_{dataset_key}.json found in tarball.\n"
+                f"Available JSON members: {available[:30]}"
+            )
+        print(f"[ho] extracting {member}")
+        ti = tf.getmember(member)
+        fh = tf.extractfile(ti)
+        assert fh is not None
+        out_json.write_bytes(fh.read())
+    print(f"[ho] saved {out_json} ({out_json.stat().st_size:,} bytes)")
+
+
 def download_ho_et_al() -> None:
-    out_json = HO_DIR / "gsm8k_zs_cot_text-davinci-002.json"
-    if out_json.exists():
-        print(f"[ho] already extracted at {out_json}")
+    gsm8k_json = HO_DIR / "gsm8k_zs_cot_text-davinci-002.json"
+    svamp_json  = HO_DIR / "svamp_zs_cot_text-davinci-002.json"
+    if gsm8k_json.exists() and svamp_json.exists():
+        print(f"[ho] already extracted at {HO_DIR}")
         return
 
     HO_DIR.mkdir(parents=True, exist_ok=True)
@@ -97,81 +162,75 @@ def download_ho_et_al() -> None:
             with zf.open(tar_member) as src, tar_path.open("wb") as dst:
                 shutil.copyfileobj(src, dst)
 
-        # Extract only the GSM8K JSON from the tarball
-        print(f"[ho] opening tarball {tar_path}")
-        with tarfile.open(tar_path, "r:gz") as tf:
-            members = tf.getnames()
-            gsm_member = next(
-                (m for m in members if m.endswith("D_gsm8k.json") and "zs_cot" in m and "text-davinci-002" in m),
-                None,
-            )
-            if gsm_member is None:
-                raise RuntimeError(
-                    f"GSM8K zs_cot file not found in tarball. Sample members: {members[:20]}..."
-                )
-            print(f"[ho] extracting {gsm_member}")
-            ti = tf.getmember(gsm_member)
-            f = tf.extractfile(ti)
-            assert f is not None
-            data_bytes = f.read()
-        out_json.write_bytes(data_bytes)
-        print(f"[ho] saved {out_json} ({out_json.stat().st_size:,} bytes)")
+        if not gsm8k_json.exists():
+            _extract_from_tarball(tar_path, "gsm8k", gsm8k_json)
+        else:
+            print(f"[ho] gsm8k already extracted, skipping")
+
+        if not svamp_json.exists():
+            _extract_from_tarball(tar_path, "svamp", svamp_json)
+        else:
+            print(f"[ho] svamp already extracted, skipping")
 
 
-def smoke_print() -> None:
-    """Print 5 GSM8K examples and 5 teacher CoTs side by side, plus schema notes."""
-    train_path = GSM8K_DIR / "train.jsonl"
-    test_path = GSM8K_DIR / "test.jsonl"
-    teacher_path = HO_DIR / "gsm8k_zs_cot_text-davinci-002.json"
+def _smoke_dataset(label: str, train_path: Path, test_path: Path, teacher_path: Path) -> None:
     if not train_path.exists() or not teacher_path.exists():
-        print("[smoke] data missing; nothing to print")
+        print(f"[smoke:{label}] data missing; skipping")
         return
-
-    gsm_train = [json.loads(l) for l in train_path.open()]
-    gsm_test = [json.loads(l) for l in test_path.open()]
+    train_rows = [json.loads(l) for l in train_path.open()]
+    test_rows  = [json.loads(l) for l in test_path.open()] if test_path.exists() else []
     teacher = json.loads(teacher_path.read_text())
     teacher_data = teacher["data"]
 
     print("=" * 60)
-    print("HO ET AL. SCHEMA REPORT")
+    print(f"HO ET AL. SCHEMA REPORT — {label.upper()}")
     print("=" * 60)
-    print("[meta]", json.dumps(teacher["metadata"], indent=2))
-    n_keys = len(teacher_data)
-    print(f"[counts] teacher records: {n_keys} (GSM8K train={len(gsm_train)}, test={len(gsm_test)}, sum={len(gsm_train)+len(gsm_test)})")
-    print("[note] sample_index ranges over train+test concatenated; train=[0..{}], test=[{}..{}]".format(
-        len(gsm_train) - 1, len(gsm_train), len(gsm_train) + len(gsm_test) - 1))
-    one = teacher_data[next(iter(teacher_data))][0]
+    print("[meta]", json.dumps(teacher.get("metadata", {}), indent=2))
+    print(f"[counts] teacher records: {len(teacher_data)}, "
+          f"train={len(train_rows)}, test={len(test_rows)}")
+    first_key = next(iter(teacher_data))
+    one = teacher_data[first_key][0]
     print(f"[fields] {list(one.keys())}")
-    print("[interpretation]")
-    print("  reasoning_prompt    -> Q + 'Let's think step by step.' (input to step 1)")
-    print("  reasoning_completion-> teacher's CoT (USE THIS as teacher_cot)")
-    print("  prompt              -> reasoning_prompt + reasoning_completion + ' Therefore, the answer is'")
-    print("  completion          -> teacher's final-answer extraction (parse to get teacher_predicted_answer)")
-    print("  answer              -> GSM8K gold answer as a bare numeric string")
-    print("  finish_reason       -> OpenAI completion finish_reason")
-    print("=" * 60)
-
-    print("\nFIVE GSM8K TRAIN EXAMPLES + TEACHER CoT")
-    print("=" * 60)
-    for i in range(5):
-        ex = gsm_train[i]
-        t = teacher_data[str(i)][0]
+    print("\nTHREE EXAMPLES + TEACHER CoT")
+    print("-" * 60)
+    for i, ex in enumerate(train_rows[:3]):
+        t_recs = teacher_data.get(str(i))
+        if not t_recs:
+            continue
+        t = t_recs[0]
         print(f"\n--- train[{i}] ---")
         print("Q:", ex["question"])
-        print("Gold (raw):", ex["answer"])
-        print("Teacher reasoning_completion:", (t.get("reasoning_completion") or "").strip())
-        print("Teacher final completion:", (t.get("completion") or "").strip())
-        print("Teacher 'answer' field:", t.get("answer"))
+        print("Gold:", ex["answer"])
+        print("Teacher CoT:", (t.get("reasoning_completion") or "")[:200].strip())
+        print("Teacher answer:", t.get("answer"))
+
+
+def smoke_print() -> None:
+    _smoke_dataset(
+        "gsm8k",
+        GSM8K_DIR / "train.jsonl",
+        GSM8K_DIR / "test.jsonl",
+        HO_DIR / "gsm8k_zs_cot_text-davinci-002.json",
+    )
+    _smoke_dataset(
+        "svamp",
+        SVAMP_DIR / "train.jsonl",
+        SVAMP_DIR / "test.jsonl",
+        HO_DIR / "svamp_zs_cot_text-davinci-002.json",
+    )
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--skip-ho", action="store_true", help="Skip Ho et al. download (debug)")
+    p.add_argument("--skip-svamp", action="store_true", help="Skip SVAMP download")
     p.add_argument("--smoke-only", action="store_true", help="Only print smoke output")
     args = p.parse_args()
 
     if not args.smoke_only:
         download_gsm8k()
+        if not args.skip_svamp:
+            download_svamp()
         if not args.skip_ho:
             download_ho_et_al()
     smoke_print()

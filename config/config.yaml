@@ -32,14 +32,25 @@ nli_batch_size: 16
 info_lm: distilgpt2                 # frozen causal LM for log-likelihood informativeness
 
 paths:
+  # GSM8K training sets
   set_a: data/processed/set_a_nofilter.jsonl
   set_b: data/processed/set_b_magister.jsonl
   set_c: data/processed/set_c_calculator.jsonl
   direct_ft: data/processed/direct_ft.jsonl
   gsm8k_test: data/raw/gsm8k/test.jsonl
+
+  # SVAMP training sets (same A/B/C structure, separate directory)
+  svamp_set_a: data/processed/svamp/svamp_set_a_nofilter.jsonl
+  svamp_set_b: data/processed/svamp/svamp_set_b_magister.jsonl
+  svamp_set_c: data/processed/svamp/svamp_set_c_calculator.jsonl
+  svamp_direct_ft: data/processed/svamp/svamp_direct_ft.jsonl
+  svamp_test: data/raw/svamp/test.jsonl
+
   ckpt_root: outputs/checkpoints
   generations_dir: outputs/generations
+  svamp_generations_dir: outputs/generations/svamp
   eval_dir: outputs/eval_results
+  svamp_eval_dir: outputs/eval_results/svamp
   audit_dir: outputs/audit
   runs_dir: outputs/runs
   plots_dir: outputs/plots

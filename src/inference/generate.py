@@ -1,8 +1,12 @@
-"""Stage 4: inference on the GSM8K test set.
+"""Stage 4: inference on the GSM8K or SVAMP test set.
 
 Loads a model (FLAN-T5-base for baseline, or a fine-tuned checkpoint for
 a student), runs beam decoding with the recipe from config/config.yaml, and
-writes JSONL records to outputs/generations/{condition}.jsonl.
+writes JSONL records to:
+  outputs/generations/{condition}.jsonl          (GSM8K, default)
+  outputs/generations/svamp/{condition}.jsonl    (SVAMP, --dataset svamp)
+
+Pass --dataset svamp to evaluate on SVAMP.
 
 Resumable: already-written records are detected by line count and skipped.
 Writes a Stage-4 run-card per condition to outputs/runs/.
@@ -24,7 +28,8 @@ from src.utils.runcard import fail, finish, start
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-CONDITIONS = [
+# GSM8K conditions (unchanged)
+GSM8K_CONDITIONS = [
     "baseline",
     "student_direct_ft",
     "student_set_a",
@@ -35,6 +40,21 @@ CONDITIONS = [
     "student_set_b_large",
     "student_set_c_large",
 ]
+
+# SVAMP conditions — same model checkpoints, different test set
+SVAMP_CONDITIONS = [
+    "baseline",
+    "student_direct_ft",
+    "student_set_a",
+    "student_set_b",
+    "student_set_c",
+    "svamp_student_direct_ft",
+    "svamp_student_set_a",
+    "svamp_student_set_b",
+    "svamp_student_set_c",
+]
+
+CONDITIONS = GSM8K_CONDITIONS  # kept for backward-compat
 
 
 def load_config(path: Path) -> dict:
@@ -153,27 +173,42 @@ def run_inference(
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--config", default="config/config.yaml")
-    p.add_argument("--condition", required=True, choices=CONDITIONS)
+    p.add_argument("--dataset", choices=["gsm8k", "svamp"], default="gsm8k",
+                   help="Test set to evaluate on (default: gsm8k)")
+    p.add_argument("--condition", required=True,
+                   help="Condition name. GSM8K: baseline|student_set_{a,b,c}|... "
+                        "SVAMP: same GSM8K-trained names, or svamp_student_set_{a,b,c} "
+                        "for models trained on SVAMP data.")
     p.add_argument("--checkpoint", default=None,
                    help="Override checkpoint path (defaults to latest under "
                         "outputs/checkpoints/{condition}/)")
     args = p.parse_args()
 
     cfg = load_config(REPO_ROOT / args.config)
-    test_path = REPO_ROOT / cfg["paths"]["gsm8k_test"]
-    gen_dir = REPO_ROOT / cfg["paths"]["generations_dir"]
 
-    if args.condition == "baseline":
+    # Resolve test set and output directory from --dataset
+    if args.dataset == "svamp":
+        test_path = REPO_ROOT / cfg["paths"]["svamp_test"]
+        gen_dir   = REPO_ROOT / cfg["paths"]["svamp_generations_dir"]
+    else:
+        test_path = REPO_ROOT / cfg["paths"]["gsm8k_test"]
+        gen_dir   = REPO_ROOT / cfg["paths"]["generations_dir"]
+
+    # Resolve checkpoint: strip leading "svamp_" prefix to find the ckpt dir
+    ckpt_key = args.condition.removeprefix("svamp_")
+    if ckpt_key == "baseline":
         model_path = cfg["model_name"]
     elif args.checkpoint:
         model_path = args.checkpoint
     else:
-        run_dir = REPO_ROOT / cfg["paths"]["ckpt_root"] / args.condition
+        run_dir = REPO_ROOT / cfg["paths"]["ckpt_root"] / ckpt_key
         model_path = str(_best_checkpoint(run_dir))
         print(f"[auto] using checkpoint: {model_path}")
 
     out_path = gen_dir / f"{args.condition}.jsonl"
-    card = start("04_inference", args.condition, {
+    card = start("04_inference", f"{args.dataset}_{args.condition}", {
+        "dataset": args.dataset,
+        "condition": args.condition,
         "model_path": str(model_path),
         "num_beams": cfg["inference_num_beams"],
         "max_new_tokens": cfg["inference_max_new_tokens"],
