@@ -316,16 +316,17 @@ def build_svamp() -> None:
                 continue
 
             cot = (t.get("reasoning_completion") or "").strip()
-            # SVAMP teacher JSON: answer lives in "answer" field (e.g. "51.0"),
-            # not in a separate "completion" field like GSM8K.
-            teacher_pred = parse_answer(t.get("answer"))
+            # SVAMP teacher JSON has no separate "completion" field (unlike GSM8K).
+            # "answer" is the gold answer copied verbatim — not the teacher prediction.
+            # Extract the teacher's prediction from the end of the CoT instead.
+            teacher_pred = parse_answer(cot)
 
             base_record = {
                 "sample_index": i,
                 "question": ex["question"],
                 "cot": cot,
                 "gold_answer": _gold_str(gold),
-                "teacher_predicted_answer": str(t.get("answer") or "").strip(),
+                "teacher_predicted_answer": str(teacher_pred) if teacher_pred is not None else "",
             }
 
             fa.write(json.dumps(base_record) + "\n")
