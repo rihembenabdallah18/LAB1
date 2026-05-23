@@ -242,9 +242,12 @@ def build():
 def build_svamp() -> None:
     """Build Set A / B / C / Direct-FT for SVAMP (mirrors build() for GSM8K).
 
-    SVAMP teacher CoTs (Ho et al., text-davinci-002, zero-shot-CoT) are keyed
-    by sample_index over the full 1 000-example dataset.  We process only the
-    700-example train split downloaded by Stage 1.
+    Two key differences from GSM8K:
+    - Teacher records are matched by question text (not by index) because the
+      Ho et al. SVAMP JSON uses its own sample_index that does not align with
+      the ChilleD/SVAMP HuggingFace train split ordering.
+    - The teacher JSON has no separate `completion` field. The gold-equivalent
+      teacher answer lives in the `answer` field (e.g. "51.0").
     """
     SVAMP_OUT.mkdir(parents=True, exist_ok=True)
 
@@ -256,6 +259,7 @@ def build_svamp() -> None:
     config_snapshot = {
         "dataset": "svamp",
         "ans_tol": ANS_TOL,
+        "match_by": "question_text",
         "calculator": "src.data.calculator.correct_equations",
         "set_c_membership": "same as Set B (Magister filter)",
     }
@@ -263,7 +267,15 @@ def build_svamp() -> None:
 
     train = [json.loads(l) for l in SVAMP_TRAIN.open()]
     teacher_blob = json.loads(HO_SVAMP.read_text())
-    teacher = teacher_blob["data"]
+    teacher_data = teacher_blob["data"]
+
+    # Build a question-text → teacher record lookup (normalised to lowercase+strip)
+    teacher_by_question: dict[str, dict] = {}
+    for recs in teacher_data.values():
+        t = recs[0]
+        key = (t.get("question") or "").strip().lower()
+        if key:
+            teacher_by_question[key] = t
 
     n_total = n_set_a = n_set_b = n_set_c = n_direct = 0
     n_skipped_no_teacher = n_skipped_unparseable_gold = n_skipped_unparseable_teacher = 0
@@ -279,7 +291,6 @@ def build_svamp() -> None:
         for i, ex in enumerate(train):
             n_total += 1
 
-            # SVAMP gold answers are plain numeric strings (e.g. "145")
             gold = parse_answer(ex["answer"])
             if gold is None:
                 n_skipped_unparseable_gold += 1
@@ -297,21 +308,24 @@ def build_svamp() -> None:
             if len(samples_direct) < 2:
                 samples_direct.append(direct_record)
 
-            recs = teacher.get(str(i))
-            if not recs:
+            # Match by question text instead of by index
+            q_key = ex["question"].strip().lower()
+            t = teacher_by_question.get(q_key)
+            if t is None:
                 n_skipped_no_teacher += 1
                 continue
-            t = recs[0]
 
             cot = (t.get("reasoning_completion") or "").strip()
-            teacher_pred = parse_answer(t.get("completion"))
+            # SVAMP teacher JSON: answer lives in "answer" field (e.g. "51.0"),
+            # not in a separate "completion" field like GSM8K.
+            teacher_pred = parse_answer(t.get("answer"))
 
             base_record = {
                 "sample_index": i,
                 "question": ex["question"],
                 "cot": cot,
                 "gold_answer": _gold_str(gold),
-                "teacher_predicted_answer": (t.get("completion") or "").strip(),
+                "teacher_predicted_answer": str(t.get("answer") or "").strip(),
             }
 
             fa.write(json.dumps(base_record) + "\n")
