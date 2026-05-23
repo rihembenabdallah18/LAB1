@@ -194,14 +194,12 @@ def main():
         test_path = REPO_ROOT / cfg["paths"]["gsm8k_test"]
         gen_dir   = REPO_ROOT / cfg["paths"]["generations_dir"]
 
-    # Resolve checkpoint: strip leading "svamp_" prefix to find the ckpt dir
-    ckpt_key = args.condition.removeprefix("svamp_")
-    if ckpt_key == "baseline":
+    if args.condition == "baseline":
         model_path = cfg["model_name"]
     elif args.checkpoint:
         model_path = args.checkpoint
     else:
-        run_dir = REPO_ROOT / cfg["paths"]["ckpt_root"] / ckpt_key
+        run_dir = REPO_ROOT / cfg["paths"]["ckpt_root"] / args.condition
         model_path = str(_best_checkpoint(run_dir))
         print(f"[auto] using checkpoint: {model_path}")
 
