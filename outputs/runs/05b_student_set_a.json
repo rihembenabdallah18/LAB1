@@ -1,17 +1,17 @@
 {
   "stage": "05b",
   "run_name": "student_set_a",
-  "started_at": "2026-05-19T18:15:55Z",
-  "completed_at": "2026-05-19T18:19:20Z",
-  "duration_seconds": 204.63,
+  "started_at": "2026-05-22T18:33:02Z",
+  "completed_at": "2026-05-22T18:37:54Z",
+  "duration_seconds": 291.39,
   "status": "completed",
-  "config_hash": "sha256:44853f638b37bb2f",
+  "config_hash": "sha256:ae960778e40fe33a",
   "config_snapshot": {
     "condition": "student_set_a",
     "batch_size": 16,
     "smoke": 0,
     "max_examples": 0,
-    "info_scorer": "distilgpt2"
+    "info_scorer": "EleutherAI/pythia-1b"
   },
   "inputs": [
     "/kaggle/working/LAB1/outputs/generations/student_set_a.jsonl"
@@ -22,14 +22,14 @@
     "/kaggle/working/LAB1/outputs/plots/receval_violin.png"
   ],
   "metrics": {
-    "intra_mean": 0.9199869025377182,
-    "inter_mean": 0.06823170671226786,
-    "info_mean": -2.5207315937328554,
-    "intra_std": 0.03135394821374246,
-    "inter_std": 0.19234065514308096,
-    "info_std": 1.7018102886588307,
+    "intra_mean": 0.9212723884553599,
+    "inter_mean": 0.06827894518493623,
+    "info_mean": -2.239271139357468,
+    "intra_std": 0.030197039526817043,
+    "inter_std": 0.19109112270733747,
+    "info_std": 1.2261163622455769,
     "n_scored": 1319,
-    "seconds_per_100": 15.444735923981106
+    "seconds_per_100": 22.013462936453426
   },
   "samples": [],
   "notes": ""
