@@ -1,0 +1,42 @@
+{
+  "stage": "03_train",
+  "run_name": "svamp_student_set_c",
+  "started_at": "2026-05-23T12:57:44Z",
+  "completed_at": "2026-05-23T12:59:58Z",
+  "duration_seconds": 133.31,
+  "status": "completed",
+  "config_hash": "sha256:92e6d1c145f1cf0e",
+  "config_snapshot": {
+    "model_name": "google/flan-t5-base",
+    "train_file": "data/processed/svamp/svamp_set_c_calculator.jsonl",
+    "n_epochs": 8,
+    "limit": null,
+    "learning_rate": 5e-05,
+    "weight_decay": 0.05,
+    "warmup_ratio": 0.1,
+    "batch_size": 4,
+    "gradient_accumulation_steps": 8,
+    "max_input_length": 512,
+    "max_target_length": 512,
+    "early_stopping_patience": 2,
+    "seed": 42
+  },
+  "inputs": [
+    "data/processed/svamp/svamp_set_c_calculator.jsonl"
+  ],
+  "outputs": [
+    "outputs/checkpoints/svamp_student_set_c/checkpoint-29",
+    "outputs/checkpoints/svamp_student_set_c/checkpoint-32"
+  ],
+  "metrics": {
+    "n_train": 269,
+    "n_val": 30,
+    "n_epochs_completed": 7.529411764705882,
+    "best_epoch": 7.529411764705882,
+    "best_eval_loss": 0.8480707406997681,
+    "device": "cuda",
+    "fp16": true
+  },
+  "samples": [],
+  "notes": "lr=5e-05, wd=0.05, epochs<= 8, patience=2"
+}

@@ -1,0 +1,51 @@
+{
+  "stage": "04_inference",
+  "run_name": "svamp_svamp_student_direct_ft",
+  "started_at": "2026-05-23T12:52:54Z",
+  "completed_at": "2026-05-23T12:53:09Z",
+  "duration_seconds": 15.42,
+  "status": "completed",
+  "config_hash": "sha256:83ba13ea121aaee2",
+  "config_snapshot": {
+    "dataset": "svamp",
+    "condition": "svamp_student_direct_ft",
+    "model_path": "/kaggle/working/LAB1/outputs/checkpoints/svamp_student_direct_ft/checkpoint-72",
+    "num_beams": 4,
+    "max_new_tokens": 512,
+    "repetition_penalty": 1.15,
+    "no_repeat_ngram_size": 4
+  },
+  "inputs": [
+    "data/raw/svamp/test.jsonl"
+  ],
+  "outputs": [
+    "outputs/generations/svamp/svamp_student_direct_ft.jsonl"
+  ],
+  "metrics": {
+    "n_total": 300,
+    "n_generated": 300,
+    "already_done": 0,
+    "seconds_per_example": 0.039
+  },
+  "samples": [
+    {
+      "question": "Winter is almost here and most animals are migrating to warmer countries. There are 41 bird families living near the mountain. If 35 bird families flew away to asia and 62 bird families flew away to africa How many more bird families flew away to africa than those that flew away to asia?",
+      "generated_cot": "#### 2",
+      "parsed_answer": 2.0,
+      "gold_answer": 27.0
+    },
+    {
+      "question": "Paige raised 7 goldfish and 12 catfish in the pond but stray cats loved eating them. Now she has 15 left. How many fishes disappeared?",
+      "generated_cot": "#### 2",
+      "parsed_answer": 2.0,
+      "gold_answer": 4.0
+    },
+    {
+      "question": "Marco and his dad went strawberry picking. Together they collected strawberries that weighed 22 pounds. On the way back Marco ' dad found 30 more pounds of strawberries. Marco's strawberries now weighed 36 pounds. How much did his dad's strawberries weigh now?",
+      "generated_cot": "#### 10",
+      "parsed_answer": 10.0,
+      "gold_answer": 16.0
+    }
+  ],
+  "notes": "gen_kwargs={'max_new_tokens': 512, 'do_sample': False, 'num_beams': 4, 'length_penalty': 1.0, 'repetition_penalty': 1.15, 'no_repeat_ngram_size': 4}"
+}

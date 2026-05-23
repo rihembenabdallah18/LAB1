@@ -1,0 +1,51 @@
+{
+  "stage": "04_inference",
+  "run_name": "svamp_baseline",
+  "started_at": "2026-05-23T13:16:15Z",
+  "completed_at": "2026-05-23T13:18:29Z",
+  "duration_seconds": 133.88,
+  "status": "completed",
+  "config_hash": "sha256:95f35a163ab81752",
+  "config_snapshot": {
+    "dataset": "svamp",
+    "condition": "baseline",
+    "model_path": "google/flan-t5-base",
+    "num_beams": 4,
+    "max_new_tokens": 512,
+    "repetition_penalty": 1.15,
+    "no_repeat_ngram_size": 4
+  },
+  "inputs": [
+    "data/raw/svamp/test.jsonl"
+  ],
+  "outputs": [
+    "outputs/generations/svamp/baseline.jsonl"
+  ],
+  "metrics": {
+    "n_total": 300,
+    "n_generated": 300,
+    "already_done": 0,
+    "seconds_per_example": 0.432
+  },
+  "samples": [
+    {
+      "question": "Winter is almost here and most animals are migrating to warmer countries. There are 41 bird families living near the mountain. If 35 bird families flew away to asia and 62 bird families flew away to africa How many more bird families flew away to africa than those that flew away to asia?",
+      "generated_cot": "35 bird families flew away to asia for a total of 35 + 62 = 124 bird families. There are 41 bird families living near the mountain so there are 124 - 41 = 42 bird families flying away to Africa. There are 42 bird families living in asia so there are 42 - 35 = 21 bird families living abroad. There ar",
+      "parsed_answer": 6.0,
+      "gold_answer": 27.0
+    },
+    {
+      "question": "Paige raised 7 goldfish and 12 catfish in the pond but stray cats loved eating them. Now she has 15 left. How many fishes disappeared?",
+      "generated_cot": "7 + 12 = 19 fishes. 19 - 15 = 9 fishes disappeared.",
+      "parsed_answer": 9.0,
+      "gold_answer": 4.0
+    },
+    {
+      "question": "Marco and his dad went strawberry picking. Together they collected strawberries that weighed 22 pounds. On the way back Marco ' dad found 30 more pounds of strawberries. Marco's strawberries now weighed 36 pounds. How much did his dad's strawberries weigh now?",
+      "generated_cot": "Marco's dad found 30 more pounds of strawberries so he found 30 + 22 = 42 pounds of strawberries. Marco's father's strawberries now weigh 42 + 36 = 66 pounds. The answer: 66.",
+      "parsed_answer": 66.0,
+      "gold_answer": 16.0
+    }
+  ],
+  "notes": "gen_kwargs={'max_new_tokens': 512, 'do_sample': False, 'num_beams': 4, 'length_penalty': 1.0, 'repetition_penalty': 1.15, 'no_repeat_ngram_size': 4}"
+}

@@ -1,0 +1,42 @@
+{
+  "stage": "03_train",
+  "run_name": "svamp_student_direct_ft",
+  "started_at": "2026-05-23T12:37:07Z",
+  "completed_at": "2026-05-23T12:41:02Z",
+  "duration_seconds": 234.62,
+  "status": "completed",
+  "config_hash": "sha256:603d81358a3ef2c2",
+  "config_snapshot": {
+    "model_name": "google/flan-t5-base",
+    "train_file": "data/processed/svamp/svamp_direct_ft.jsonl",
+    "n_epochs": 8,
+    "limit": null,
+    "learning_rate": 5e-05,
+    "weight_decay": 0.05,
+    "warmup_ratio": 0.1,
+    "batch_size": 4,
+    "gradient_accumulation_steps": 8,
+    "max_input_length": 512,
+    "max_target_length": 512,
+    "early_stopping_patience": 2,
+    "seed": 42
+  },
+  "inputs": [
+    "data/processed/svamp/svamp_direct_ft.jsonl"
+  ],
+  "outputs": [
+    "outputs/checkpoints/svamp_student_direct_ft/checkpoint-69",
+    "outputs/checkpoints/svamp_student_direct_ft/checkpoint-72"
+  ],
+  "metrics": {
+    "n_train": 630,
+    "n_val": 70,
+    "n_epochs_completed": 7.291139240506329,
+    "best_epoch": 6.987341772151899,
+    "best_eval_loss": 0.8519599437713623,
+    "device": "cuda",
+    "fp16": true
+  },
+  "samples": [],
+  "notes": "lr=5e-05, wd=0.05, epochs<= 8, patience=2"
+}

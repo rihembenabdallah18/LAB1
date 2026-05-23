@@ -1,0 +1,76 @@
+{
+  "stage": "02",
+  "run_name": "filter_svamp",
+  "started_at": "2026-05-23T12:23:04Z",
+  "completed_at": "2026-05-23T12:23:04Z",
+  "duration_seconds": 0.44,
+  "status": "completed",
+  "config_hash": "sha256:c5a38918f935290f",
+  "config_snapshot": {
+    "dataset": "svamp",
+    "ans_tol": 1e-06,
+    "match_by": "question_text",
+    "calculator": "src.data.calculator.correct_equations",
+    "set_c_membership": "same as Set B (Magister filter)"
+  },
+  "inputs": [
+    "data/raw/svamp/train.jsonl",
+    "data/raw/ho_et_al_cots/svamp_zs_cot_text-davinci-002.json"
+  ],
+  "outputs": [
+    "data/processed/svamp/svamp_set_a_nofilter.jsonl",
+    "data/processed/svamp/svamp_set_b_magister.jsonl",
+    "data/processed/svamp/svamp_set_c_calculator.jsonl",
+    "data/processed/svamp/svamp_direct_ft.jsonl"
+  ],
+  "metrics": {
+    "svamp_train_rows": 700,
+    "set_a_size": 509,
+    "set_b_size": 299,
+    "set_c_size": 299,
+    "direct_ft_size": 700,
+    "set_b_keep_rate": 0.5874,
+    "set_c_keep_rate": 0.5874,
+    "n_calculator_edited": 19,
+    "skipped_no_teacher": 191,
+    "skipped_unparseable_gold": 0,
+    "skipped_unparseable_teacher_pred": 0
+  },
+  "samples": [
+    {
+      "set": "A",
+      "sample_index": 0,
+      "question": "There are 87 oranges and 290 bananas in Philip's collection. If the bananas are organized into 2 groups and oranges are organized into 93 groups How big is each group of bananas?",
+      "cot": "There are 87 oranges and 290 bananas in Philip's collection. \n\nWe want to know how many bananas are in each group if the bananas are organized into 2 groups and oranges are organized into 93 groups. \n\nWe can start by finding out how many bananas there are in total. \n\nThere are 87 oranges and 290 bananas in Philip's collection. \n\nThere are 87 + 290 = 377 pieces of fruit in total. \n\nWe want to know how many bananas there are in each group if the bananas are organized into 2 groups and oranges are organized into 93 groups. \n\nWe",
+      "gold_answer": "145",
+      "teacher_predicted_answer": "93.0"
+    },
+    {
+      "set": "B",
+      "sample_index": 6,
+      "question": "Randy has 95 blocks. He uses 20 blocks to build a house and 50 blocks to build a tower. How many more blocks did he use to build the tower than he did to build the house?",
+      "cot": "Randy has 95 blocks. \nHe uses 20 blocks to build a house. \nThat leaves him with 95 - 20 = 75 blocks. \nHe uses 50 blocks to build a tower. \nThat leaves him with 75 - 50 = 25 blocks. \n\nSo he used 50 - 20 = 30 more blocks to build the tower than he did to build the house.",
+      "gold_answer": "30",
+      "teacher_predicted_answer": "30.0"
+    },
+    {
+      "set": "C",
+      "sample_index": 6,
+      "question": "Randy has 95 blocks. He uses 20 blocks to build a house and 50 blocks to build a tower. How many more blocks did he use to build the tower than he did to build the house?",
+      "cot": "Randy has 95 blocks. \nHe uses 20 blocks to build a house. \nThat leaves him with 95 - 20 = 75 blocks. \nHe uses 50 blocks to build a tower. \nThat leaves him with 75 - 50 = 25 blocks. \n\nSo he used 50 - 20 = 30 more blocks to build the tower than he did to build the house.",
+      "gold_answer": "30",
+      "teacher_predicted_answer": "30.0",
+      "calculator_corrected_cot": false,
+      "n_calc_edits": 0
+    },
+    {
+      "set": "direct",
+      "sample_index": 0,
+      "question": "There are 87 oranges and 290 bananas in Philip's collection. If the bananas are organized into 2 groups and oranges are organized into 93 groups How big is each group of bananas?",
+      "cot": "",
+      "gold_answer": "145",
+      "teacher_predicted_answer": null
+    }
+  ],
+  "notes": "SVAMP Stage 2: Set A, B, C (calculator), Direct FT."
+}
