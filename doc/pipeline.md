@@ -166,4 +166,20 @@ A separate but structurally identical pipeline runs on **SVAMP** (Patel et al. 2
 | Inference | [`scripts/04_inference_svamp.sh`](../scripts/04_inference_svamp.sh) |
 | Accuracy | [`scripts/05a_accuracy_svamp.sh`](../scripts/05a_accuracy_svamp.sh) |
 
-SVAMP is the **transfer / robustness probe**: do the cross-condition rankings established on GSM8K reproduce on a different (smaller, simpler) word-problem benchmark? The corresponding plot is `outputs/plots/svamp_transfer_gap.png`.
+SVAMP serves two roles:
+
+1. **Re-train transfer** — run the full A/B/C/Direct-FT pipeline on SVAMP train, evaluate on SVAMP test. Tests whether the GSM8K cross-condition ranking reproduces on a different (smaller, simpler) word-problem benchmark.
+2. **Zero-shot cross-dataset transfer** — take the GSM8K-trained `student_set_b` checkpoint as-is and evaluate it on SVAMP test (`outputs/generations/svamp/student_set_b.jsonl`, no `svamp_` prefix). Quantifies how much the GSM8K-distilled CoT capability survives a distribution shift, with no additional fine-tuning.
+
+The corresponding plots are `outputs/plots/svamp_overview.png` and `outputs/plots/svamp_transfer_gap.png`.
+
+### Variant — `student_set_c_mix` (mixed CoT + answer-only supervision)
+
+An additional GSM8K-only condition that does not fit the clean four-set design. The training set is **Set C concatenated with a same-sized random sample of Direct FT** (3,389 + 3,389 = 6,778 examples, shuffled, seed 42), built in [`notebooks/Kaggle.ipynb`](../notebooks/Kaggle.ipynb) and written to `data/processed/set_c_plus_direct.jsonl`. The run-name is `student_set_c_mix`.
+
+| | |
+|---|---|
+| **Purpose** | Test whether interleaving CoT supervision with short answer-only targets reduces the catastrophic-forgetting effect that pushes pure-CoT students below the zero-shot baseline at FLAN-T5-base scale. |
+| **What it adds beyond Set C** | The student sees both long CoT targets (~80 tokens) and short answer-only targets (~5 tokens) in every batch. The short targets anchor the answer format and require small weight updates; the long ones supply the reasoning signal. |
+| **Evaluation** | Accuracy + ReCEval. Appears as `student_set_c_mix` in `accuracy.csv` and `receval_summary.csv`. |
+| **Where it lives** | Notebook-only — no shell script under `scripts/`. The notebook cells write the mixed JSONL, then call `src/train/finetune.py` and `src/inference/generate.py` directly with `--run-name student_set_c_mix`. |

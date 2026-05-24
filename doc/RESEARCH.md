@@ -106,6 +106,9 @@ The detailed walkthrough — teacher source, set construction, every script and 
 | `student_set_a` | Set A (7,473) | GSM8K test | accuracy + ReCEval |
 | `student_set_b` | Set B (3,389) | GSM8K test | accuracy + ReCEval |
 | `student_set_c` | Set C (3,389, 676 calculator-edited) | GSM8K test | accuracy + ReCEval |
+| `student_set_c_mix` | Set C + same-sized sample of Direct FT, shuffled (6,778) | GSM8K test | accuracy + ReCEval |
+
+`student_set_c_mix` tests whether interleaving CoT with answer-only targets mitigates catastrophic forgetting at T5-base scale. See [pipeline.md §Variant](pipeline.md#variant--student_set_c_mix-mixed-cot--answer-only-supervision).
 
 ### GSM8K — FLAN-T5-large (scale ablation)
 
@@ -125,6 +128,7 @@ The detailed walkthrough — teacher source, set construction, every script and 
 | `svamp_student_set_a` | SVAMP Set A (509) | SVAMP test |
 | `svamp_student_set_b` | SVAMP Set B (299) | SVAMP test |
 | `svamp_student_set_c` | SVAMP Set C (299) | SVAMP test |
+| `student_set_b` (GSM8K-trained) | GSM8K Set B (3,389) | SVAMP test | accuracy only — zero-shot cross-dataset transfer probe |
 
 Outputs land in `outputs/eval_results/accuracy.csv`, `outputs/eval_results/receval_summary.csv`, and `outputs/eval_results/svamp/`. Headline plots in `outputs/plots/`: `gsm8k_filter_ablation.png`, `gsm8k_scale_ablation.png`, `svamp_overview.png`, `svamp_transfer_gap.png`, `accuracy_vs_receval.png`, `receval_bars.png`.
 
