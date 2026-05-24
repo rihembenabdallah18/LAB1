@@ -65,12 +65,12 @@ target : "{cot} #### {gold_answer}"      (cot is empty for Direct FT)
 
 | | |
 |---|---|
-| **Size** | ~2,635 (35% of Set A) |
-| **How it's built** | Walk the CoT, rewrite each `A op B = C` substring whose claimed result is wrong, then re-parse the final answer. Keep the CoT only if the **corrected** final answer matches gold. The corrected text — not the original — is what gets trained on. |
-| **Purpose** | A **process-aware** filter. A chain that reaches the right answer through wrong arithmetic is rejected; a chain that fails the raw answer check but is rescued by arithmetic fixes is accepted. |
-| **What to expect** | Set C is *not* strictly broader than Set B (empirically smaller — `C=2,635 < B=3,389`). It trades ~800 right-answer-wrong-arithmetic chains for ~50 arithmetic-rescued ones. |
-| **Value it adds** | If Set C beats Set B on **ReCEval** but not on accuracy, that supports H2 (filtering on process helps reasoning quality more than it helps outcomes). |
-| **Evaluation** | Accuracy + full ReCEval. The Set B vs. Set C comparison is the project's most direct test of "process vs. outcome filtering". |
+| **Size** | 3,389 (same membership as Set B) |
+| **How it's built** | Membership uses the same answer-correctness check as Set B (teacher's `completion` field parsed against gold). On top of that, the CoT text is walked and each `A op B = C` substring whose claimed result is wrong is rewritten to the true value. The **corrected** text — not the original — is what gets trained on. In the current run 676 of the 3,389 examples received at least one calculator edit. |
+| **Purpose** | A **process-aware** cleaning step. Same set of training questions as Set B, but with arithmetic mistakes inside the chain repaired before fine-tuning. |
+| **Why membership matches Set B** | An earlier version selected on `parse_answer(corrected_cot)`, which used a last-number fallback and silently dropped ~800 valid examples whenever the calculator patch shifted which number was last in the text. Decoupling the correctness check (use `completion`) from the cleaning step (use `corrected_cot`) brought Set C in line with Set B. |
+| **Value it adds** | Differences between Set B and Set C now come from the calculator-edited 676 examples only, isolating "cleaner arithmetic in supervision" from "different training subset". If Set C beats Set B on **ReCEval** but not on accuracy, that supports H2. |
+| **Evaluation** | Accuracy + full ReCEval. The Set B vs. Set C comparison is the project's most direct test of "process vs. outcome supervision". |
 
 ### At a glance
 
@@ -79,7 +79,7 @@ target : "{cot} #### {gold_answer}"      (cot is empty for Direct FT)
 | Direct FT | 7,473 | none (no CoT) | un-finetuned baseline | Does fine-tuning help at all? |
 | Set A | 7,473 | none | Direct FT | Does adding CoTs help? |
 | Set B | 3,389 | outcome (answer-correct) | Set A | Does filtering by **final answer** help? |
-| Set C | 2,635 | process (calculator-corrected) | Set B | Does filtering by **arithmetic correctness** help reasoning quality? |
+| Set C | 3,389 (676 with calculator edits) | process (calculator-cleaned, same membership as B) | Set B | Does **cleaning arithmetic inside the chain** help reasoning quality? |
 
 ---
 
@@ -141,3 +141,29 @@ The headline comparison is **always two columns side by side**:
 - **ReCEval** — does the student get there for the right reason? (Stage 5b)
 
 A student that wins on accuracy but loses on ReCEval is the project's central object of study: a model that picks up the answer pattern without picking up the reasoning behind it. The four-set design exists so that this gap can be attributed to a specific cause (no CoT, no filter, outcome filter, process filter) rather than left as a single number.
+
+---
+
+## Extensions on top of the main GSM8K experiment
+
+### Scale ablation — FLAN-T5-large
+
+The same four training sets are also used to fine-tune **FLAN-T5-large** (~780M, ~3× the parameters of base). Each large-model condition writes to a `*_large` run-name (e.g. `student_set_b_large`) and appears as an extra row in `outputs/eval_results/accuracy.csv` and the ReCEval summary. Two purposes:
+
+- Test whether Ho et al.'s observation that CoT distillation only helps at scale starts to appear between base and large.
+- Anchor the small-model numbers — if `base` and `large` rank conditions the same way, the small-model story is not a small-model artifact.
+
+These runs are driven from [`notebooks/Kaggle.ipynb`](../notebooks/Kaggle.ipynb) rather than dedicated shell scripts; they share the same `src/train/finetune.py` entry-point with `--model google/flan-t5-large` and a slightly smaller batch size.
+
+### SVAMP transfer
+
+A separate but structurally identical pipeline runs on **SVAMP** (Patel et al. 2021, ~700 train / 300 test, simpler arithmetic). Same A/B/C/Direct-FT design, same teacher source (`itsnamgyu/reasoning-teacher` SVAMP CoTs), same `src/data/filter.py` invoked with `--dataset svamp`. SVAMP-only paths live in `config/config.yaml` under `svamp_*` and outputs in `outputs/{generations,eval_results}/svamp/`.
+
+| Stage | Script |
+|---|---|
+| Filter | [`scripts/02_filter_svamp.sh`](../scripts/02_filter_svamp.sh) |
+| Train  | [`scripts/03_train_svamp_{direct_ft,set_a,set_b,set_c}.sh`](../scripts/) |
+| Inference | [`scripts/04_inference_svamp.sh`](../scripts/04_inference_svamp.sh) |
+| Accuracy | [`scripts/05a_accuracy_svamp.sh`](../scripts/05a_accuracy_svamp.sh) |
+
+SVAMP is the **transfer / robustness probe**: do the cross-condition rankings established on GSM8K reproduce on a different (smaller, simpler) word-problem benchmark? The corresponding plot is `outputs/plots/svamp_transfer_gap.png`.
