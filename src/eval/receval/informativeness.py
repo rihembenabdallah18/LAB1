@@ -6,9 +6,8 @@ For each step i, compute:
 where log p is the mean per-token log-probability of the gold answer tokens
 under a frozen causal LM given the preceding context.
 
-Default model: EleutherAI/pythia-410m (v3). Pass model_name="gpt2" to
-reproduce v2 scores.
-
+Default model: EleutherAI/pythia-1b. All released ReCEval scores in
+outputs/eval_results/ were computed with this model 
 Chain score = min info_i over all steps. Negative values are expected when
 adding a step makes the gold answer less predictable — this is the correct
 behaviour, not a bug.
@@ -18,7 +17,7 @@ from __future__ import annotations
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-_DEFAULT_MODEL = "distilgpt2"
+_DEFAULT_MODEL = "EleutherAI/pythia-1b"
 _state: dict = {}
 
 

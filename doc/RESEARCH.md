@@ -81,7 +81,7 @@ A null result for H2 (filter helps both equally) is also reportable and informat
 - Free-tier Kaggle notebooks (NVIDIA T4, 16 GB VRAM, ~12-hour sessions)
 - HuggingFace Transformers, Datasets, Accelerate
 - DeBERTa-v3-small NLI (`cross-encoder/nli-deberta-v3-small`) for ReCEval correctness components
-- DistilGPT-2 as the frozen LM for the log-likelihood informativeness variant
+- EleutherAI/pythia-1b as the frozen LM for the log-likelihood informativeness variant
 - spaCy for sentence segmentation
 - Checkpoints saved to `outputs/checkpoints/`; intermediate epoch checkpoints pruned with `python -m src.utils.cleanup_ckpts`
 

@@ -29,7 +29,7 @@ inference_length_penalty: 1.0
 # ReCEval (Stage 5b)
 nli_model: cross-encoder/nli-deberta-v3-small
 nli_batch_size: 16
-info_lm: distilgpt2                 # frozen causal LM for log-likelihood informativeness
+info_lm: EleutherAI/pythia-1b       # frozen causal LM for log-likelihood informativeness
 
 paths:
   # GSM8K training sets
